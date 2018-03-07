@@ -1,0 +1,27 @@
+\title{Выравнивание синсетов тезаурусов YARN и PWN}
+\author{Агапов Г.Д.\\
+Научный руководитель: Фильченков А. А.\\
+Консультант: Браславский П.И.}
+
+
+\input{preamble.latex}
+
+\begin{document}
+$include-before$
+
+\input{Title.latex}
+\addtocounter{page}{3}
+\clearpage\mbox{}
+
+%\clearpage
+
+$if(toc)$
+\tableofcontents
+$endif$
+
+$body$
+
+\bibliography{bib}
+
+$include-after$
+\end{document}
