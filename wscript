@@ -23,44 +23,32 @@ def build(bld):
         return ' '.join(sources)
     sources = make_sources([
         'Introduction',
-        ('01', [ #Обзор предметной области
-            '1_Thesauri',
-            #'2_Applications',
-            '3_PWN',
-            '4_RussNets',
-            '5_YARN',
+        ('01', [ #Review
+            '1_Blockchain',
+            # '2_Consensus',
+            # '3_Cryptocurrencies_existing', #Informal review, highlighting major components, short comparison of support by various currencies, note on fomalization efforts (none)
+            # '4_Cryptocurrency_research'
         ]),
-        ('02', [ #Постановка задачи
-            '1_Problem',
-            '2_Previous',
-            '4_Task',
-        ]),
-        ('04', [ #Automatic resolution approach
-            '1_Graph',
-            '2_Jaccard', #Measure core, naive approach
-            '3_Problem_resolution', #Major problems resolution
-            '4_Improvements',  #Additional improvemets on measure
-            '5_Testing',
-            '6_Unused', #Improvements, that weren't implemented (or tested)
-            '7_BCs'
-        ]),
-        ('05', [ #Crowdsourcing approach
-            '2_Prerequisites',
-            '3_Task_formulation',
-            '4_Workflow',
-            '5_Result_processing',
-            '6_Testing',
-            '7_Future_work'
-        ]),
+        # ('02', [ #Task definition
+        #     '1_Problem',
+        #     '2_Previous',
+        #     '3_Task',
+        # ]),
+        # ('03', [ #Model
+        #     '1_Structure',
+        #     '2_State',
+        #     '3_Block',
+        #     # '4_Consensus',
+        # ]),
         'Conclusion',
     ])
-    bld(features='pandoc-merge', source=sources + ' bib.bib', target='main.latex',
+    pdfname='agapov-master-thesis'
+    bld(features='pandoc-merge', source=sources + ' bib.bib', target=pdfname + '.latex',
             disabled_exts='fancy_lists', 
-            flags='-R -S --latex-engine=xelatex --listings --chapters',
-            linkflags='--toc --chapters -R', template='template.latex')
-
+            flags='-f markdown+raw_tex+smart --pdf-engine=xelatex --listings --top-level-division=chapter',
+            linkflags='--toc --top-level-division=chapter -f markdown+raw_tex', template='template.latex')
     # Outputs main.pdf
-    bld(features='tex', type='xelatex', source='main.latex', flags='--shell-escape', 
+    bld(features='tex', type='xelatex', source=pdfname + '.latex', flags='--shell-escape', 
             prompt=True)
-    bld.add_manual_dependency(bld.bldnode.find_or_declare('main.pdf'),
+    bld.add_manual_dependency(bld.bldnode.find_or_declare(pdfname + '.pdf'),
                               bld.srcnode.find_node('utf8gost705u.bst'))
