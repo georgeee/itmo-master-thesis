@@ -15,7 +15,7 @@
 \setotherlanguage{english}
 
 \usepackage[numbers]{natbib}
-\bibliographystyle{utf8gost705u}
+\bibliographystyle{../include/utf8gost705u}
 \renewcommand{\bibnumfmt}[1]{#1.\hfill}
 \renewcommand{\bibsection}{\likechapter{Список источников}\vspace{-2em}}
 \setlength{\bibsep}{0pt}
@@ -120,7 +120,7 @@
 \exhyphenpenalty=10000
 \usepackage{wrapfig}
 \usepackage{graphicx}
-\graphicspath{{images/}}
+\graphicspath{{../images/}}
 \DeclareGraphicsExtensions{.eps,.pdf,.png,.jpg}
 \newcommand{\image}[2]{%
     \begin{figure}[ht]
@@ -144,6 +144,7 @@
 \definecolor{bluekw}{rgb}{0,0,0.5}
 \definecolor{redstrings}{rgb}{0.5,0,0}
 \definecolor{graylinenumbers}{rgb}{0.5,0.5,0.5}
+\input{../include/haskell.latex}
 \lstset{%
     basicstyle=\footnotesize\ttfamily,
     columns=fullflexible,
@@ -185,3 +186,12 @@
 \def\bbldec{дек}
 
 \usepackage{forest}
+
+\usepackage{amsthm}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Опр.}[chapter]
+
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+

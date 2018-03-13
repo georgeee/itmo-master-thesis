@@ -1,5 +1,1 @@
-/build/
-.waf-*
-.lock-waf_*
-/*.bib~*
-*.pyc
+/out

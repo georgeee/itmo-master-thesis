@@ -3,12 +3,12 @@
 Научный руководитель: Чивилихин Д.С.}
 
 
-\input{preamble.latex}
+\input{../include/preamble.latex}
 
 \begin{document}
 $include-before$
 
-\input{Title.latex}
+\input{../include/Title.latex}
 \addtocounter{page}{3}
 \clearpage\mbox{}
 
@@ -20,7 +20,7 @@ $endif$
 
 $body$
 
-\bibliography{bib}
+\bibliography{../include/bib}
 
 $include-after$
 \end{document}
