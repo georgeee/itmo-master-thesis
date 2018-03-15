@@ -188,6 +188,7 @@
 \usepackage{forest}
 
 \usepackage{amsthm}
+\usepackage{amsmath}
 
 \theoremstyle{definition}
 \newtheorem{definition}{Опр.}[chapter]
@@ -195,3 +196,5 @@
 \theoremstyle{remark}
 \newtheorem*{remark}{Remark}
 
+\providecommand{\tightlist}{%
+    \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}

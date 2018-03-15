@@ -1,8 +1,9 @@
 PD=pandoc
-LATEX=xelatex
+LATEX=xelatex -interaction=nonstopmode
 BIBTEX=bibtex
 
-THESIS=agapov-master-thesis
+THESIS=agapov-master-thesis-tmp
+THESIS_FINAL=agapov-master-thesis
 LATEX_FILES=$(THESIS).aux $(THESIS).bbl $(THESIS).blg $(THESIS).log $(THESIS).out $(THESIS).toc
 OUT=out
 INCLUDE=include
@@ -16,5 +17,12 @@ latex: clean
 	cd $(OUT) && pandoc --listings --toc --top-level-division=chapter -f markdown+raw_tex -t latex --template=../$(INCLUDE)/template.latex -o $(THESIS).latex `find ../$(TEXT) -name '*.pd' | sort`
 
 pdf: latex
-	cd $(OUT) && $(LATEX) $(THESIS).latex && $(BIBTEX) $(THESIS) && $(LATEX) $(THESIS).latex && $(LATEX) $(THESIS).latex
+	cd $(OUT) && rm -f latex.error && \
+	 { $(LATEX) $(THESIS).latex \
+	              && $(BIBTEX) $(THESIS) \
+	              && $(LATEX) $(THESIS).latex \
+	              && $(LATEX) $(THESIS).latex \
+	              && mv $(THESIS).pdf $(THESIS_FINAL).pdf; \
+	 } >> latex.error && echo $(THESIS_FINAL).pdf generated \
+	|| { mv latex.error error.log; echo ''; echo '==================='; echo ''; echo "Error detected"; echo less $(OUT)/error.log; }
 
