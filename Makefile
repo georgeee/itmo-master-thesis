@@ -14,7 +14,7 @@ clean:
 
 latex: clean
 	mkdir -p $(OUT)
-	cd $(OUT) && pandoc --listings --toc --top-level-division=chapter -f markdown+raw_tex -t latex --template=../$(INCLUDE)/template.latex -o $(THESIS).latex `find ../$(TEXT) -name '*.pd' | sort`
+	cd $(OUT) && pandoc --listings --toc --top-level-division=chapter -f markdown+raw_tex+multiline_tables -t latex --template=../$(INCLUDE)/template.latex -o $(THESIS).latex `find ../$(TEXT) -name '*.pd' | sort`
 
 pdf: latex
 	cd $(OUT) && rm -f latex.error && \
