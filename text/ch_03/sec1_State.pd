@@ -1,0 +1,8 @@
+\section{Модель состояния системы}
+
+Как было замечено в разделе \ref{ch01:blockchain-applications}, большинство блокчейн-систем представляют из себя распределенные базы данных. В следствии этого, для построения модели блокчейн-системы, следует начать с формализации состояния базы данных, способа его изменять.
+
+\begin{code}[language=Haskell,label=lst:statep,caption={Структура состояния системы}]
+type StateP id value = Map (Prefixed id) value -- Portion of state
+\end{code}
+
