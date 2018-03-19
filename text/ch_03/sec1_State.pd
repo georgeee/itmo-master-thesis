@@ -3,6 +3,73 @@
 Как было замечено в разделе \ref{ch01:blockchain-applications}, большинство блокчейн-систем представляют из себя распределенные базы данных. В следствии этого, для построения модели блокчейн-системы, следует начать с формализации состояния базы данных, способа его изменять.
 
 \begin{code}[language=Haskell,label=lst:statep,caption={Структура состояния системы}]
+import qualified Data.Map as M
+import           Data.Map (Map)
+
+newtype Prefix = Prefix Int
+type Prefixed k = (Prefix, k)
+
 type StateP id value = Map (Prefixed id) value -- Portion of state
 \end{code}
 
+Тип `StateP` выражает тип состояния системы. Причем как глобального состояния целиком, так и его части.
+Состояние представляется как словарь, отображение из ключа `(Int, id)` в значение `value`. Целочисленный префикс ключа введен для удобства дальнейшего построения.
+
+И ключ, и префикс введены как абстрактные типы. Это означает, что для описания модели нам не требуется указывать, какой именно тип имеет ключ или значение. При описании работы с состоянием (в дальнейшем), будут накладываться различные ограничения (требования) на ключ или значение. Для выражения ограничений в нотации будет использоваться конструкция языка Haskell тайп-класс, например:
+
+\begin{code}[language=Haskell,label=lst:constraints-example,caption={Пример наложения ограничений на абстрактные переменные}]
+getMonoidValue :: (Ord id, Monoid value) => Prefixed id -> StateP id value -> value
+getMonoidValue key stateP = maybe mempty (M.lookup key stateP)
+\end{code}
+
+В примере было наложено ограничение `Ord id` на ключ, выражающее требование существования линейного порядка на множестве всех ключей. В сигнатуре функции указано еще одно требование, `Monoid value`, требующее от `value` моноидальную структуру.
+
+\subsection{Вид транзакции}
+
+В листинге \ref{lst:changset} формализовано изменение состояния.
+Изменение словаря можно представить как тип-произведение из множества ключей,
+которые требуется удалить `csRemove` и множества пар ключ-значение, которые требуется добавить в словарь `csAdd`.
+
+\begin{code}[language=Haskell,label=lst:changset,caption={Структура состояния системы}]
+data ChangeSet id value = ChangeSet
+    { csAdd    :: Map (Prefixed id) value
+    , csRemove :: Set (Prefixed id)
+    }
+\end{code}
+
+Применение объекта типа `ChangeSet id value` к словарю должно иметь следующую семантику:
+
+\begin{equation} \label{prop:bc_modify}
+\begin{split}
+& applyChangeSet\: (\: state : StateP, \: \langle csAdd, csRemove \rangle : ChangeSet \:) \enspace = \enspace
+\\
+& \quad 
+     \begin{cases}
+       \bot, \quad \text {if }
+       \\ \quad\quad csRemove \cap keys(state) \neq csRemove 
+       \\ \quad\quad\quad\quad \lor (keys(csAdd) \setminus csRemove) \cap keys(state) \neq \emptyset
+       \\
+       (state \setminus csRemove) \cap csAdd, \quad \text {otherwise}
+    \end{cases} 
+\end{split}
+\end{equation}
+
+Транзакция к состоянию имеет следующий вид:
+
+\begin{code}[language=Haskell,label=lst:changset,caption={Структура состояния системы}]
+newtype TxType = TxType Int
+
+data Tx id proof value = Tx
+    { txType  :: TxType
+    , txProof :: proof
+    , txBody  :: ChangeSet id value
+    }
+\end{code}
+
+Помимо изменения состояния, транзакция содердит в себе еще два поля: `txType` и `txProof`.
+Поле `txType` представляет из себя целочисленный идентификатор типа транзакции.
+Поле `txProof` содержит в себе дополнительную информацию, требующуюся валидатору для проверки корректности транзакции.
+В частности, для транзакции, изменяющей баланс пользовательского счёта, `txProof`, должен содержать подпись транзакции секретным ключом пользователя-владельца средств.
+
+Оба поля будут использованы в последствии в построении валидатора.
+Что существенно, поле `txBody` содержит в себе полный набор изменений, которые будут применены к состоянию системы. Ни `txProof`, ни `txType` не будут применены к состоянию, будут забыты как только валидатор их обработает.
