@@ -1,5 +1,7 @@
 \section{Модель состояния системы}
 
+\label{ch03-state}
+
 Как было замечено в разделе \ref{ch01:blockchain-applications}, большинство блокчейн-систем представляют из себя распределенные базы данных. В следствии этого, для построения модели блокчейн-системы, следует начать с формализации состояния базы данных, способа его изменять.
 
 \begin{code}[language=Haskell,label=lst:statep,caption={Структура состояния системы}]
@@ -57,10 +59,10 @@ data ChangeSet id value = ChangeSet
 Транзакция к состоянию имеет следующий вид:
 
 \begin{code}[language=Haskell,label=lst:tx,caption={Транзакция}]
-newtype TxType = TxType Int
+newtype StateTxType = StateTxType Int
 
-data Tx id proof value = Tx
-    { txType  :: TxType
+data StateTx id proof value = StateTx
+    { txType  :: StateTxType
     , txProof :: proof
     , txBody  :: ChangeSet id value
     }
@@ -79,13 +81,13 @@ data Tx id proof value = Tx
 Простейший валидатор транзакции может быть описан функцией, имеющей одну из сигнатур:
 
 \begin{code}[language=Haskell]
-validator1 :: Tx id proof value -> Bool
+validator1 :: StateTx id proof value -> Bool
 validator1 = ...
 
-validator2 :: StateP id value -> Tx id proof value -> Bool
+validator2 :: StateP id value -> StateTx id proof value -> Bool
 validator2 = ...
 
-validator3 :: Tx id proof value -> (Set id, StateP id value -> Bool)
+validator3 :: StateTx id proof value -> (Set id, StateP id value -> Bool)
 validator3 = ...
 \end{code}
 
@@ -113,28 +115,41 @@ data Free f a
 Конструктор `Pure` используется для возврата значения, конструктор `Free` для обращения к внешнему контексту с последующим продолжением вычисления.
 Переменная типа `f` задаёт конкретный формат обращения к внешнему контексту и обработки результата обращения.
 
-\begin{code}[language=Haskell,label=lst:reqiter,caption={Функтор обращения к состоянию}]
-newtype ReqIter req resp res = ReqIter (req, resp -> res)
+\begin{code}[language=Haskell,label=lst:dataaccess1]
+newtype DataAccess1 req resp res = DataAccess1 (req, resp -> res)
   deriving (Monoid, Functor)
+\end{code}
 
-type StateComputation req resp = Free (ReqIter req resp)
-type StatePComputation id value = StateComputation (Set id) (StateP id value)
+Тип `DataAccess1` представляет из себя пару, первым элементом которой является запрос к состоянию, вторым -- функция, которая принимает результат исполнения запроса и возвращает функцию продолжения вычисления. Подставив `req = Set id`, `resp = Map (Prefixed id) value`, мы получаем конктрукцию, достаточно экспрессивную для реализации валидатора, итеративно рассматривающего различные ключи состояния. В некоторых случаях этого ожет оказаться недостаточным, например если нам требуется запросить не
+какой-то конкретный ключ, а все ключи, отвечающие какому-либо критерию. Воспользуемся префиксом: добавим возможность сделать запрос, который либо запрашивает множество ключей, либо проитерироваться всем ключам с префиксом $p$ в состоянии.
 
-validator4 :: Tx id proof value -> StatePComputation id value Bool
+\begin{code}[language=Haskell,label=lst:data-access,caption={Функтор обращения к состоянию}]
+data FoldF a res = forall b. FoldF (b, a -> b -> b, b -> res)
+
+data DbAccess id value res
+  = DbQuery (Set (Prefixed id)) (StateP id value -> res)
+  | DbIterator Prefix (FoldF (id, value) res)
+  deriving (Functor)
+
+type StatePComputation id value = Free (DbAccess id value)
+
+validator4 :: StateTx id proof value -> StatePComputation id value Bool
 validator4 = ..
 \end{code}
 
-Тип `ReqIter` представляет из себя пару, первым элементом которой является запросом к состоянию, вторым -- функция, которая принимает результат исполнения запроса и возвращает функцию продолжения вычисления. Тип `StatePComputation`, сигнатура функции `validator4` показывают, как подстановкой `ReqIter` как параметра в тип `Free` можно получить конструкцию, подходящую для описания валидатора. Сигнатура `validator4` позволяет реализации запрашивать ключи из глобального состояния, получать соответствующие им значения, причем
+Тип `DataAccess` представляет из себя тип-сумму, первый конструктор которого эквивалентен `DataAccess1`, второй представляет из себя интерфейс для итерации по множеству ключей. Тип `FoldF` представляет произвольную функцию свёртки: начальное значение `b`, свёртка по очередному элементу `a -> b -> b` и конверсия результата в тип результата `res`.
+
+Тип `StatePComputation`, сигнатура функции `validator4` показывают, как подстановкой `DataAccess` как параметра в тип `Free` можно получить конструкцию, подходящую для описания валидатора. Сигнатура `validator4` позволяет реализации запрашивать ключи из глобального состояния, получать соответствующие им значения, причем
 делать это столько раз, сколько потребуется.
 
 Окончательный тип валидатора транзакции предложен в листинге \ref{lst:validator}:
 
 \begin{code}[language=Haskell,label=lst:validator,caption={Тип валидатора транзакции}]
 newtype PreValidator e id proof value =
-  PreValidator (Tx id proof value -> ExceptT e (StatePComputation id value) ())
+  PreValidator (StateTx id proof value -> ExceptT e (StatePComputation id value) ())
 
 newtype Validator e id proof value =
-  Validator (Map TxType (PreValidator e id proof value))
+  Validator (Map StateTxType (PreValidator e id proof value))
 \end{code}
 
 Тип `ExceptT e (StatePComputation id value) ()` является непосредственным обобщением типа `StatePComputation id value Bool`, позволяющим в случае если валидация транзакции закончилась отрицательным результатом, указать ошибку типа `e` (а не просто `False`). Тип `PreValidator` является достаточным для описания логики валидации, в частности при проверке транзакции, он может рассматривать тип транзакции (поле `txType`), возвращать положительный результат в случае если транзакция является корректной
@@ -148,6 +163,22 @@ newtype Validator e id proof value =
 
 \subsection{Моноидальная структура валидатора}
 
-Важным свойством определенных выше валидатора, предвалидатора является их моноидальная структура. Рассмотрим подробнее определения моноидальной единицы, моноидального умножения.
+Важным свойством определенных выше валидатора, предвалидатора является их моноидальная структура. Рассмотрим подробнее определения моноидальной единицы, моноидального умножения для этих двух типов.
 
-TODO моноидальная структура валидатора
+Моноидальная единица для предвалидатора реализуется просто: это предвалидатор, разрешающий всякую транзакцию. Аналогично для валидатора: единицей является тип, запрещающий всякую транзакцию (пустой ассоциативный массив из типа транзакции в предвалидатор).
+
+Умножение для валидатора представляет из себя объединение двух ассоциативных массивов из типа транзакции в предвалидатор, причем при совпадении ключей, требуется воспользоваться моноидальным умножением для предвалидатора.
+
+Умножение для предвалидатора сводится к умножению двух вычислений типа `ExceptT e (StatePComputation id value) ()`. Или, эквивалентно, `StatePComputation id value (Either e ())`. Соответствующими типу значениями могут быть: `Free dataAccess`, `Pure (Left e)`, `Pure (Right ())`. Если одно из значений `Pure (Left e)`, вычисление завершается ошибкой `e`, т.е. результат умножения -- `Pure (Left e)`. Если один из операндов умножения `Pure (Right ())`, результат умножения равен другому операнду.
+
+Наконец, если мы имеем операнды `Free dataAccess1`, `Free dataAccess2`, следует произвести следующее:
+
+* Если `dataAccess1 = DBQuery idSet1 cont1`, `dataAccess2 = DBQuery idSet2 cont2`, результат умножения будет равен `DBQuery idSet3 cont3`, где $idSet3 = idSet1 \cup idSet2$, $cont3 = \lambda values . cont1 \: (values \cap idSet1) \cdot cont2 \: (values \cap idSet2)$ (обозначение $\cdot$ используется для моноидального умножения).
+* Если `dataAccess1 = DBIterator p (FoldF (init, foldf, resF))`, результат умножения будет `DBIterator p (FoldF (init, foldf, resF'))`, где $resF' = \lambda b . \: (resF \: b) \cdot (Free \: dataAccess2)$
+* Аналогично для `dataAccess2 = DBIterator p f2`
+
+Определенное таким образом моноидальное умножение обладает интересным свойством: соседствующие операнды `DBQuery idSet cont` будут объединены в один. Это означает что множество небольших запросов к состоянию будут объединены в один композитный запрос (что представляет собой распространенную и достаточно эффективную оптимизацию при работе с базами данных).
+
+В дальнейшем при построении модели мы будем активно пользоваться моноиальной структурой валидатора и предвалидатора. Эта особенность позволяет описывать различные функциональности независимо друг от друга (посредством описания соответствующих предвалидаторов, валидаторов), а затем совмещать их вместе, используя моноидальное умножение.
+
+
