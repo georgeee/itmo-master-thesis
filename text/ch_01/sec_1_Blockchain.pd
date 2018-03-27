@@ -7,14 +7,13 @@
 
 \end{definition}
 
-
 \begin{equation} \label{def:blockchain}
 \begin{split}
 & Blockchain_{\langle H, Data \rangle} =
 \{ \enspace \langle origin, blocks \rangle
 \mid origin \in Data,
 \\
-& \enspace blocks \in List_{\langle Data, Value_H \rangle},
+& \enspace blocks \in List_{Data \times  Value_H},
 \\
 & \enspace \langle index, block \equiv \langle data, value_H \rangle \rangle \in blocks
 \\

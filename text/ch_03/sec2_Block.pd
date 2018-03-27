@@ -7,6 +7,8 @@
 * Ассоциацию множества последовательных изменений, которые требуется применить атомарно
     * Требуется для реализации многих алгоритмов консенсуса, в частности алгоритмов на основе методов доказательства доли владения, доказательства выполнения работы.
 
+\subsection{Валидация цепи блоков}
+
 Рассмотрим тип блока:
 
 \begin{code}[language=Haskell,label=lst:block,caption={Структура блока}]
@@ -19,10 +21,12 @@ data Block header payload = Block
 Блок включает в себя заголовок с абстрактным типом `header` и набор изменений состояния с абстрактным типом `payload` (в дальнейшем "тело блока").
 
 \begin{code}[language=Haskell,label=lst:block-conf,caption={Конфигурация валидации цепи блоков}]
-data BlkConfiguration header payload blockRef = BlkConfiguration
+newtype BlockIntegrityVerifier header payload e = BIV { unBIV :: Block header payload -> Either e () }
+
+data BlkConfiguration header payload blockRef e = BlkConfiguration
     { bcBlockRef     :: header -> blockRef
     , bcPrevBlockRef :: header -> Maybe blockRef
-    , bcBlkIntegrityVerify    :: Block header payload -> Bool
+    , bcBlkIntegrityVerify :: BlockIntegrityVerifier header payload e
     , bcIsBetterThan :: OldestFirst [] header -> OldestFirst [] header -> Bool
     , bcMaxForkDepth :: Int
     }
@@ -30,6 +34,15 @@ data BlkConfiguration header payload blockRef = BlkConfiguration
 
 Что важно, для построения функциональности процессинга блоков нам не требуется информация о конкретном виде состояния, транзакции (описанные в разделе \ref{ch03-state}).
 Логика валидации цепи блоков, конфигурация которой представлена в листинге \ref{lst:block-conf}, не требует доступа к состоянию системы.
+
+Задачи логики валидации цепи:
+
+* Проверить, что предложенная цепочка является корретной
+  * Используются методы `bcBlockRef`, `bcPrevBlockRef`
+* Целостность блока с точки зрения логики блокчейн-системы
+  * Используется метод `bcBlkIntegrityVerify`
+* Принять решение о замене принятой на текущий момент цепи $c1$ на предложенную цепь $c2$
+  * Используются методы `bcIsBetterThan`, `bcMaxForkDepth`
 
 Функция `bcBlockRef` позволяет получить уникальный идентификатор блока `blockRef`, как правило для его получения используется криптографически стойкая хэш-функция, применяемая к блоку. Функция `bcPrevBlockRef` позволяет получить идентификатор блока, предшествующего данному в цепи.
 
@@ -45,23 +58,76 @@ data BlkConfiguration header payload blockRef = BlkConfiguration
 
 Параметр `bcMaxForkDepth` позволяет лимитировать глубину форка. Любой форк, глубина которого превышает `bcMaxForkDepth`, рассматривается как некорректный. Подобная проверка необходима для реализации некоторых консенсус-алгоритмов, в частности требуется алгоритмом Ouroboros \citep{ouroboros}.
 
-С помощью описанной конфигурации, логика валидации цепи блоков может принять решение о том, следует ли предпочесть принятую на текущий момент цепь блоков $c1$ предложенной цепи $c2$. Для принятия решения логике валидации помимо конфигурации требуется перед сами цепочки $c1$, $c2$.
+\subsection{Применение цепи блоков}
 
-Помимо валидации цепи блоков, логика обработки блоков включает себя логику применения блоков к текущему состоянию сети. С точки зрения обработки блоков, состояние системы состоит из эффективного состояния системы `state` и хранилища блоков. Взаимодействие с состоянием системы описано конфигурацией
-Хранилище блоков используется только логикой обработки блоков, изменеие
+Помимо валидации цепи блоков, логика обработки блоков включает себя логику применения блоков к текущему состоянию сети. С точки зрения обработки блоков, состояние системы состоит из эффективного состояния системы `state` и хранилища блоков.
+Взаимодействие с состоянием системы описано конфигурацией, представленной в листинге \ref{lst:block-state}.
 
-\begin{code}[language=Haskell,label=lst:block-state,caption={Конфигурация примемения блоков к состоянию}]
-data BlkStateFunc header payload undo blockRef e m = BlkStateFunc
+\begin{code}[language=Haskell,label=lst:block-state,caption={Конфигурация обработки блоков}]
+-- | Blund: BLock + UNDo
+data Blund header payload undo = Blund
+  { bwuBlock :: Block header payload
+  , bwuUndo  :: undo
+  }
+
+data BlkStateConfiguration header payload undo blockRef e m =
+  BlkStateConfiguration
     { bsfApplyPayload :: payload -> ExceptT e m undo
     , bsfApplyUndo    :: undo    -> ExceptT e m ()
-    , bsfStoreBlund   :: BlockWithUndo header payload undo -> m ()
-    , bsfGetBlund     :: blockRef -> ExceptT e m (Maybe (BlockWithUndo header payload undo))
+
+    , bsfStoreBlund   :: Blund header payload undo -> m ()
+    , bsfGetBlund     :: blockRef -> ExceptT e m (Maybe (Blund header payload undo))
     , bsfBlockExists  :: blockRef -> m Bool
-    , bsfGetTip       :: ExceptT e m blockRef
-    , bsfSetTip       :: blockRef -> m ()
-    , bsfConfig       :: BlkConfiguration header payload blockRef
+    , bsfGetTip       :: m (Maybe blockRef)
+    , bsfSetTip       :: Maybe blockRef -> m ()
+
+    , bsfConfig       :: BlkConfiguration header payload blockRef e
     }
 \end{code}
 
-Для логики обработки блоков важно лишь знать что существует некоторое состояние `state`, к которому применяется `payload`. Заголовок `blkHeader`
-используется только логикой обработки блоков.
+Методы конфигурации `BlkStateConfiguration` запускаются в некоторой монаде (окружении) `m` (монада -- базовая конструкция, используемая во многих функциональных языках программирования, в том числе Haskell, для описания действий, выполняющихся последовательно в некотором окружении).
+
+Методы `bsfApplyPayload`, `bsfApplyUndo` используются для работы с эффективным состоянием системы. Метод `bsfApplyPayload` применяет тело блока к состоянию, возвращая некоторый объект `undo`, который в дальнейшем может использоваться для отката изменений. Метод `bsfApplyUndo` применяет объект `undo` к состоянию, откатывая изменения, внесенные ранее некоторым `bsfApplyPayload`.
+
+Методы `bsfStoreBlund`, `bsfGetBlund`, `bsfBlockExists`, `bsfGetTip`, `bsfSetTip` используются для взаимодействия с хранилищем блоков. Из сигнатур можно вывести что хранилище блоков должно содержать как минимум следующие данные:
+
+* Идентификатор последнего примененного блока, `tip`
+* Множество объектов типа `Blund`, представляющих из себя пару из примененного блока и соответствующего ему объекта `undo`
+
+Таким образом, полное состояние системы можно представить как $s \in S_n$ для $n \in N \cup {0}$:
+
+\begin{equation} \label{prop:block-apply-invs}
+\begin{split}
+& S_0 = \{ \langle s_0 \in State, s_0 \in State, \emptyset, \bot \rangle \}
+\\
+& S_{n \geqslant 1} = \{ \langle s_0, s_n, blunds, tip \rangle \mid s_0, ..., s_n \in State,
+\\
+& \quad blunds \in List_{Block \times Undo}, \: tip \in Ref_{Block},
+\\
+& \quad (\enspace \exists \: \langle block, \_ \rangle \in blunds: ref(block) = tip \enspace) ,
+\\
+& \quad (\enspace \exists \: \langle s_0, s_{n-1}, blunds \setminus \{block\}, tip' \rangle \in S_{n-1}:
+\\
+& \quad \quad \langle block , undo \rangle \in blunds \land \: tip' = prev(block)
+\\
+& \quad \quad \quad \land s_{n-1} = applyUndo ( undo, s_n ),
+\\
+& \quad \quad \quad \land s_n = applyPayload ( payload(block), s_{n-1} ),
+\\
+& \quad ) ,
+\\
+& \}
+\end{split}
+\end{equation}
+
+\subsection{Взаимосвязь с моделью состояния системы}
+
+В разделе \ref{ch03-state} введена модель состояния системы. Модель блокчейна, описанная выше, однако, была потроена независимо. В настоящем подразделе мы покажем как модель блокчейна совмещается с моделью состояния системы.
+
+Как показано выше, логика обработки блоков обращается с некоторым абстрактным состоянием `state`, к которому применяется `payload`, в результате чего возвращается объект `undo`, позволяющий откатить произведенные изменения. Абстрактные типы `state`, `payload`, `undo` введены намерено для того, чтобы лучше декомпозировать задачу валидации и применения блока на валидацию цепочки блока, оперирующую с объектом типа `header` и не рассматривающей `payload` и задачу валидации и применения `payload` к
+состоянию системы.
+
+Для совмещения моделей требуется использовать подстановку типов: `payload = [StateTx id proof value]`, `undo = ChangeSet id value`. Реализация метода `bsfApplyPayload` последовательно валидирует и применяет каждую транзакцию из `payload` к состоянию (причем делает это таким образом, что в случае когда валидация очередной транзакции завершается неудачей, все примененные изменения откатываются). Реализация метода `bsfApplyUndo` применяет данный `undo` к состоянию.
+
+Удобством такого разделения моделей блокчейна и состояния системы является то, что всякая компонента блокчейн-системы может быть представлена объектом `Validator e id proof value`, и, может быть, `BlockIntegrityVerifier header payload e`, которые проверяют требуемые инварианты для релевантных типов транзакций. Как можно заметить, тип `BlockIntegrityVerifier` также явлется моноидом, что позволяет композировать логику различных компонент системы моноидным умножением (что безусловно является
+значительным удобством при построении систем, позволяя реализовать плоскую, хорошо декомпозированную архитектуру для блокчейн-системы).
