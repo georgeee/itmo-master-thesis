@@ -1,4 +1,4 @@
-\documentclass[14pt]{extreport}
+\documentclass[11pt]{extreport}
 \usepackage{extsizes}
 
 \usepackage[a4paper, hmargin={30mm, 15mm}, vmargin={20mm, 20mm}]{geometry}
