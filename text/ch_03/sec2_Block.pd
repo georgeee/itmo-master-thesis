@@ -21,7 +21,8 @@ data Block header payload = Block
 Блок включает в себя заголовок с абстрактным типом `header` и набор изменений состояния с абстрактным типом `payload` (в дальнейшем "тело блока").
 
 \begin{code}[language=Haskell,label=lst:block-conf,caption={Конфигурация валидации цепи блоков}]
-newtype BlockIntegrityVerifier header payload e = BIV { unBIV :: Block header payload -> Either e () }
+newtype BlockIntegrityVerifier header payload e =
+     BIV { unBIV :: Block header payload -> Either e () }
 
 data BlkConfiguration header payload blockRef e = BlkConfiguration
     { bcBlockRef     :: header -> blockRef

@@ -20,7 +20,8 @@ type StateP id value = Map (Prefixed id) value -- Portion of state
 И ключ, и префикс введены как абстрактные типы. Это означает, что для описания модели нам не требуется указывать, какой именно тип имеет ключ или значение. При описании работы с состоянием (в дальнейшем), будут накладываться различные ограничения (требования) на ключ или значение. Для выражения ограничений в нотации будет использоваться конструкция языка Haskell тайп-класс, например:
 
 \begin{code}[language=Haskell,label=lst:constraints-example,caption={Пример наложения ограничений на абстрактные переменные}]
-getMonoidValue :: (Ord id, Monoid value) => Prefixed id -> StateP id value -> value
+getMonoidValue :: (Ord id, Monoid value)
+                 => Prefixed id -> StateP id value -> value
 getMonoidValue key stateP = maybe mempty (M.lookup key stateP)
 \end{code}
 
@@ -148,7 +149,8 @@ validator4 = ..
 
 \begin{code}[language=Haskell,label=lst:validator,caption={Тип валидатора транзакции}]
 newtype PreValidator e id proof value =
-  PreValidator (StateTx id proof value -> ExceptT e (StatePComputation id value) ())
+  PreValidator 
+    (StateTx id proof value -> ExceptT e (StatePComputation id value) ())
 
 newtype Validator e id proof value =
   Validator (Map StateTxType (PreValidator e id proof value))
