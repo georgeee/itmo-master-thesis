@@ -193,6 +193,12 @@
 \theoremstyle{definition}
 \newtheorem{definition}{Опр.}[chapter]
 
+\theoremstyle{lemma}
+\newtheorem{lemma}{Лемма}[chapter]
+
+\theoremstyle{property}
+\newtheorem{property}{Свойство}[chapter]
+
 \theoremstyle{remark}
 \newtheorem*{remark}{Remark}
 
