@@ -111,7 +111,7 @@ exStateP2 =
 \begin{code}[language=Haskell,label=lst:valueop,caption={Изменение значения некоторого ключа}]
 data ValueOp v
     = New v
-    | Upd v
+    | Upd (v -> v)
     | Rem
     | NotExisted
     deriving (Show, Eq)
