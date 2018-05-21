@@ -24,13 +24,21 @@ data Block header payload = Block
 
 \begin{code}[language=Haskell,label=lst:block-conf,caption={Конфигурация валидации цепи блоков}]
 newtype BlockIntegrityVerifier header payload e =
-     BIV { unBIV :: Block header payload -> Either e () }
+     BIV { runBIV :: Block header payload -> Either e () }
+
+newtype ChainComparator header =
+      ChainComparator
+        { runChainComparator
+             :: OldestFirst [] header
+             -> OldestFirst [] header
+             -> Bool
+        }
 
 data BlkConfiguration header payload blockRef e = BlkConfiguration
     { bcBlockRef     :: header -> blockRef
     , bcPrevBlockRef :: header -> Maybe blockRef
     , bcBlkIntegrityVerify :: BlockIntegrityVerifier header payload e
-    , bcIsBetterThan :: OldestFirst [] header -> OldestFirst [] header -> Bool
+    , bcIsBetterThan :: ChainComparator header
     , bcMaxForkDepth :: Int
     }
 \end{code}
