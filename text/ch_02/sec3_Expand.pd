@@ -57,7 +57,7 @@ applyExpanderTxsPar (Expander runExpander)
 
 \begin{equation} \label{restrict-expand-many}
 \begin{split}
-& \forall e_j \in es \enspace \forall e_{j \geqslant i} \in es
+& \forall e_i \in es \enspace \forall e_{j \geqslant i} \in es
 \quad
 in \; (e_i) \cap out \; (e_j) = \emptyset
 \end{split}
