@@ -20,7 +20,7 @@ data Block header payload = Block
     }
 \end{code}
 
-Блок включает в себя заголовок с абстрактным типом `header` и набор изменений состояния с абстрактным типом `payload` (в дальнейшем "тело блока").
+Блок включает в себя заголовок с абстрактным типом `header` и набор изменений состояния с абстрактным типом `payload` (в дальнейшем «тело блока»).
 
 \begin{code}[language=Haskell,label=lst:block-conf,caption={Конфигурация валидации цепи блоков}]
 newtype BlockIntegrityVerifier header payload e =
