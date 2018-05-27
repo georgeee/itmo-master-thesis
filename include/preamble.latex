@@ -123,13 +123,13 @@
 \graphicspath{{../images/}}
 \DeclareGraphicsExtensions{.eps,.pdf,.png,.jpg}
 \newcommand{\image}[2]{%
+  \def\figurename{Рисунок}
     \begin{figure}[ht]
         \includegraphics[width=\textwidth]{#1}
         \caption{#2}
         \label{img:#1}
     \end{figure}
 }
-\def\figureautorefname{Рисунок}
 
 
 \usepackage{mathtools}
