@@ -1,6 +1,7 @@
 \begin{titlepage}
 \newpage
 \centering
+\Large
 
 Санкт-Петербургский национальный исследовательский университет\\
 информационных технологий, механики и оптики\\
@@ -10,7 +11,7 @@
 \vfill
 
 \makeatletter
-\textbf{\large
+\textbf{\LARGE
 \@title
 }
 \makeatother

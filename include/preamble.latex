@@ -1,7 +1,8 @@
-\documentclass[14pt]{extreport}
+\documentclass[9pt, twocolumn]{extreport}
 \usepackage{extsizes}
 
-\usepackage[a4paper, hmargin={30mm, 15mm}, vmargin={20mm, 20mm}]{geometry}
+%\usepackage[a4paper, hmargin={30mm, 15mm}, vmargin={20mm, 20mm}]{geometry}
+\usepackage[a4paper, hmargin={15mm, 15mm}, vmargin={30mm, 30mm}]{geometry}
 \usepackage[absolute]{textpos}
 
 \usepackage{fontspec}
@@ -124,11 +125,11 @@
 \DeclareGraphicsExtensions{.eps,.pdf,.png,.jpg}
 \newcommand{\image}[2]{%
   \def\figurename{Рисунок}
-    \begin{figure}[ht]
+    \begin{figure*}[ht]
         \includegraphics[width=\textwidth]{#1}
         \caption{#2}
         \label{img:#1}
-    \end{figure}
+    \end{figure*}
 }
 
 
@@ -167,7 +168,7 @@
 \renewcommand\lstlistingname{Листинг}
 \makeatletter
 \lstnewenvironment{code}[1][]
-    {\lstset{float=htb,#1}}
+    {\lstset{float=*htb,#1}}
         {}
 \makeatother
 

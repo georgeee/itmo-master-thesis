@@ -283,9 +283,8 @@ type ERoComp e mw rs = ExceptT e (RoComp mw rs)
 \begin{equation} \label{def:depth-eq}
 \begin{split}
 & \textup{depth} \enspace (\enspace comp \in RoComp \enspace) \equiv
-\\
-&
-\min_{Strategy}  \max_{Input} \; \{ \;
+\min_{Strategy}  \max_{Input} \\
+& \{ \;
      \textup{CountStateAccess} (
         \textup{execute} \enspace ( Strategy, \; comp , \; Input )
       ) \; \}
