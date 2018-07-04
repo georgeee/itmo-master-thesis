@@ -24,5 +24,5 @@ pdf: latex
 	|| { mv latex.error error.log; echo ''; echo '==================='; echo ''; echo "Error detected"; echo less $(OUT)/error.log; }
 
 cut:
-	pdftk out/agapov-master-thesis-tmp.pdf cat 2 4-46 output out/agapov-master-thesis-tmp1.pdf
+	pdftk out/agapov-master-thesis-tmp.pdf cat 2 4-44 output out/agapov-master-thesis-tmp1.pdf
 	mv out/agapov-master-thesis-tmp1.pdf out/agapov-master-thesis-tmp.pdf

@@ -1,7 +1,11 @@
 \title{Разработка модели криптовалюты на основе алгоритма консенсуса реализующего метод доказательства доли владения}
-\author{Агапов Г.Д.\\
-Научный руководитель: Чивилихин Д.С.}
-
+\author{
+  \begin{tabular}{C{4cm} C{4cm} C{4cm}}
+    Георгий Агапов & Илья Пересадин & Даниил Чивилихин\\
+    Serokell OÜ & Serokell OÜ & Университет ИТМО
+  \end{tabular}
+}
+\date{}
 
 \input{../include/preamble.latex}
 
@@ -14,9 +18,11 @@ $include-before$
 
 %\clearpage
 
+%\onecolumn
 $if(toc)$
 \tableofcontents
 $endif$
+%\twocolumn
 
 $body$
 

@@ -1,8 +1,7 @@
 \documentclass[9pt, twocolumn]{extreport}
 \usepackage{extsizes}
 
-%\usepackage[a4paper, hmargin={30mm, 15mm}, vmargin={20mm, 20mm}]{geometry}
-\usepackage[a4paper, hmargin={15mm, 15mm}, vmargin={30mm, 30mm}]{geometry}
+\usepackage[a4paper, hmargin={15mm, 15mm}, vmargin={29mm, 29mm}]{geometry}
 \usepackage[absolute]{textpos}
 
 \usepackage{fontspec}
@@ -39,7 +38,7 @@
 \titlespacing*{\subsection}{\parindent}{*2}{*2}
 
 \usepackage{tocloft}
-\renewcommand{\cfttoctitlefont}{\hspace{0.38\textwidth} \bfseries\MakeUppercase}
+%\renewcommand{\cfttoctitlefont}{\hspace{0.38\textwidth} \bfseries\MakeUppercase}
 \renewcommand{\cftbeforetoctitleskip}{-1em}
 \renewcommand{\cftaftertoctitle}{\mbox{}\hfill \\ \mbox{}\hfill{\footnotesize Стр.}\vspace{-2.5em}}
 \renewcommand{\cftchapfont}{\normalsize\bfseries \MakeUppercase{\chaptername} }
@@ -207,3 +206,6 @@
     \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
 
 \newcommand{\passthrough}[1]{#1}
+
+\usepackage{tabularx}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
